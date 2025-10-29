@@ -9,8 +9,9 @@ export const config = {
 // Function to detect food and calories from a base64 encoded image
 async function detectFoodAndCalories(base64Image) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY;
-    const model = 'gemini-pro-vision'; // Specified model for detection
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const model = 'gemini-2.0-flash'; // Specified model for detection
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+
 
     // Extract MIME type and pure base64 data from the image string
     const match = base64Image.match(/^data:(image\/\w+);base64,(.*)$/);

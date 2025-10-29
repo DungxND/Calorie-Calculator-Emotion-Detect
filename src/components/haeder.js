@@ -25,13 +25,13 @@ const CustomHead = () => {
             <meta name="application-name" content={siteTitle}/>
             <meta property="og:description" content={description}/>
             <meta property="og:site_name" content={siteTitle}/>
-            <meta property="og:url" content="https://aicc.gptdevelopment.online/"/>
+            <meta property="og:url" content="none"/>
             <meta property="og:locale" content="en_US"/>
             <meta property="og:image" content={pageImage}/>
             <meta property="og:image:secure_url" content={pageImage}/>
             <meta property="og:type" content="website"/>
             <meta name="twitter:card" content={siteTitle}/>
-            <meta name="twitter:site" content="https://aicc.gptdevelopment.online/"/>
+            <meta name="twitter:site" content="none"/>
             <meta name="twitter:image" content={pageImage}/>
             <meta name="twitter:description" content={description}/>
         </Head>
@@ -55,7 +55,7 @@ export const Header = () => {
 
                     {/* Navigation Menu */}
                     <nav className="hidden md:flex space-x-10">
-                        <a href="https://github.com/mggger/Calorie-Calculator" target="_blank" rel="noopener noreferrer"
+                        <a href="https://github.com/hung38384/Calorie-Calculator" target="_blank" rel="noopener noreferrer"
                            className="text-gray-700 hover:text-gray-900">
                             <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path fillRule="evenodd" clipRule="evenodd"
