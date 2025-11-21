@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PlusCircle, Trash2, AlertCircle } from 'lucide-react';
 
 const STORAGE_KEY = 'symptomLogs';
 
@@ -49,53 +50,93 @@ export const SymptomLogger = () => {
   };
 
   return (
-    <div className="mt-6 p-4 bg-white rounded shadow">
-      <h3 className="text-lg font-semibold mb-2">Ghi nhận triệu chứng / Tâm trạng</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-        <textarea className="col-span-2 p-2 border rounded" placeholder="Ghi chú (ví dụ: đau bụng, đầy hơi...)" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Ghi chú triệu chứng" />
-        <div className="flex flex-col gap-2">
-          <select className="p-2 border rounded" value={emotion} onChange={(e) => setEmotion(e.target.value)} aria-label="Cảm xúc">
-            <option value="neutral">Bình thường</option>
-            <option value="happy">Vui</option>
-            <option value="sad">Buồn</option>
-            <option value="angry">Khó chịu</option>
-            <option value="surprised">Ngạc nhiên</option>
-            <option value="fearful">Lo lắng</option>
-          </select>
-          <select className="p-2 border rounded" value={severity} onChange={(e) => setSeverity(e.target.value)} aria-label="Mức độ">
-            <option value="mild">Nhẹ</option>
-            <option value="moderate">Vừa</option>
-            <option value="severe">Nặng</option>
-          </select>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <button className="btn btn-primary" onClick={addLog} disabled={!note}>Thêm</button>
-        <button className="btn btn-outline" onClick={clearLogs}>Xóa tất cả</button>
-      </div>
+    <div className="card bg-base-100 shadow-xl mt-6 w-full">
+      <div className="card-body">
+        <h2 className="card-title text-lg font-bold flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-primary" />
+          Ghi nhận triệu chứng / Tâm trạng
+        </h2>
 
-      <div className="mt-4">
-        <h4 className="font-medium mb-2">Ghi chép gần đây</h4>
-        {logs.length === 0 && <p className="text-sm text-gray-500">Chưa có ghi chép.</p>}
-        <ul className="space-y-2">
-          {logs.map(l => (
-            <li key={l.id} className="p-2 border rounded bg-gray-50">
-              <div className="flex justify-between">
-                <div>
-                  <div className="text-sm text-gray-700">{new Date(l.time).toLocaleString('vi-VN')}</div>
-                  <div className="font-semibold">{l.note}</div>
-                  <div className="text-xs text-gray-500">Cảm xúc: {l.emotion} • Mức độ: {l.severity}</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+          <textarea
+            className="textarea textarea-bordered col-span-2 w-full"
+            placeholder="Ghi chú (ví dụ: đau bụng, đầy hơi...)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            aria-label="Ghi chú triệu chứng"
+          />
+          <div className="flex flex-col gap-4">
+            <select
+              className="select select-bordered w-full"
+              value={emotion}
+              onChange={(e) => setEmotion(e.target.value)}
+              aria-label="Cảm xúc"
+            >
+              <option value="neutral">😐 Bình thường</option>
+              <option value="happy">😊 Vui</option>
+              <option value="sad">😢 Buồn</option>
+              <option value="angry">😠 Khó chịu</option>
+              <option value="surprised">😮 Ngạc nhiên</option>
+              <option value="fearful">😨 Lo lắng</option>
+            </select>
+            <select
+              className="select select-bordered w-full"
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value)}
+              aria-label="Mức độ"
+            >
+              <option value="mild">🟢 Nhẹ</option>
+              <option value="moderate">🟡 Vừa</option>
+              <option value="severe">🔴 Nặng</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="card-actions justify-end">
+          <button className="btn btn-outline btn-error gap-2" onClick={clearLogs}>
+            <Trash2 className="w-4 h-4" /> Xóa tất cả
+          </button>
+          <button className="btn btn-primary gap-2" onClick={addLog} disabled={!note}>
+            <PlusCircle className="w-4 h-4" /> Thêm ghi chép
+          </button>
+        </div>
+
+        <div className="divider"></div>
+
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold mb-4">Ghi chép gần đây</h3>
+          {logs.length === 0 && <p className="text-base-content/60 italic">Chưa có ghi chép nào.</p>}
+          <ul className="space-y-4">
+            {logs.map(l => (
+              <li key={l.id} className="card bg-base-200 compact shadow-sm">
+                <div className="card-body">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs text-base-content/60 mb-1">
+                        {new Date(l.time).toLocaleString('vi-VN')}
+                      </p>
+                      <h4 className="font-bold text-lg">{l.note}</h4>
+                      <div className="flex gap-2 mt-2">
+                        <span className="badge badge-outline">Cảm xúc: {l.emotion}</span>
+                        <span className={`badge ${l.severity === 'severe' ? 'badge-error' : l.severity === 'moderate' ? 'badge-warning' : 'badge-success'}`}>
+                          Mức độ: {l.severity}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {l.advice && (
+                    <div className="alert alert-info mt-3 text-sm">
+                      <div>
+                        <strong className="block mb-1">💡 Lời khuyên AI:</strong>
+                        <span className="whitespace-pre-line">{l.advice}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-              {l.advice && (
-                <div className="mt-2 p-2 bg-white border rounded text-sm text-gray-700">
-                  <strong>Lời khuyên:</strong>
-                  <div className="mt-1 whitespace-pre-line">{l.advice}</div>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

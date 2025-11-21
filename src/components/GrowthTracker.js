@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Activity, Calculator, RotateCcw, Trash2 } from 'lucide-react';
 
 export const GrowthTracker = () => {
   const [childData, setChildData] = useState({
@@ -18,17 +19,14 @@ export const GrowthTracker = () => {
     }
   }, []);
 
-  // Lưu lịch sử khi có thay đổi
   useEffect(() => {
     localStorage.setItem('growthHistory', JSON.stringify(history));
   }, [history]);
 
-  // Tính lượng calo cần thiết dựa trên công thức Harris-Benedict
   const calculateCalories = (data) => {
     const { age, weight, height, gender } = data;
     if (!age || !weight || !height) return null;
 
-    // Công thức tính BMR cho trẻ em (3-10 tuổi)
     let bmr;
     if (gender === 'male') {
       bmr = 22.7 * parseFloat(weight) + 495;
@@ -36,7 +34,6 @@ export const GrowthTracker = () => {
       bmr = 22.5 * parseFloat(weight) + 499;
     }
 
-    // Nhân với hệ số hoạt động (giả định mức độ hoạt động trung bình)
     const calories = Math.round(bmr * 1.5);
     return calories;
   };
@@ -54,7 +51,6 @@ export const GrowthTracker = () => {
     const calories = calculateCalories(childData);
     setRecommendedCalories(calories);
 
-    // Thêm vào lịch sử
     const entry = {
       ...childData,
       date: new Date().toISOString(),
@@ -64,139 +60,147 @@ export const GrowthTracker = () => {
   };
 
   return (
-    <div className="mt-6 p-4 bg-white rounded shadow">
-      <h3 className="text-lg font-semibold mb-2">Theo dõi tăng trưởng</h3>
-      <p className="text-sm text-gray-600 mb-4">Nhập thông tin cơ bản của trẻ để nhận khuyến nghị calo hàng ngày. Dữ liệu được lưu cục bộ trên trình duyệt.</p>
-      
-      <form onSubmit={handleSubmit} className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tuổi (năm)
-            </label>
-            <input
-              type="number"
-              name="age"
-              min="0"
-              max="18"
-              step="0.1"
-              value={childData.age}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-              required
-            />
+    <div className="card bg-base-100 shadow-xl mt-6 w-full">
+      <div className="card-body">
+        <h2 className="card-title text-lg font-bold flex items-center gap-2">
+          <Activity className="w-5 h-5 text-primary" />
+          Theo dõi tăng trưởng
+        </h2>
+        <p className="text-sm text-base-content/70 mb-4">
+          Nhập thông tin cơ bản của trẻ để nhận khuyến nghị calo hàng ngày.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium">Tuổi (năm)</span>
+              </label>
+              <input
+                type="number"
+                name="age"
+                min="0"
+                max="18"
+                step="0.1"
+                value={childData.age}
+                onChange={handleInputChange}
+                className="input input-bordered w-full"
+                required
+              />
+            </div>
+
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium">Giới tính</span>
+              </label>
+              <select
+                name="gender"
+                value={childData.gender}
+                onChange={handleInputChange}
+                className="select select-bordered w-full"
+              >
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+              </select>
+            </div>
+
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium">Cân nặng (kg)</span>
+              </label>
+              <input
+                type="number"
+                name="weight"
+                min="0"
+                step="0.1"
+                value={childData.weight}
+                onChange={handleInputChange}
+                className="input input-bordered w-full"
+                required
+              />
+            </div>
+
+            <div className="form-control w-full">
+              <label className="label">
+                <span className="label-text font-medium">Chiều cao (cm)</span>
+              </label>
+              <input
+                type="number"
+                name="height"
+                min="0"
+                step="0.1"
+                value={childData.height}
+                onChange={handleInputChange}
+                className="input input-bordered w-full"
+                required
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Giới tính
-            </label>
-            <select
-              name="gender"
-              value={childData.gender}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
+          <div className="card-actions justify-end mt-6">
+            <button
+              type="button"
+              className="btn btn-ghost gap-2"
+              onClick={() => { setChildData({ age: '', weight: '', height: '', gender: 'male' }); setRecommendedCalories(null); }}
             >
-              <option value="male">Nam</option>
-              <option value="female">Nữ</option>
-            </select>
+              <RotateCcw className="w-4 h-4" /> Đặt lại
+            </button>
+            <button type="submit" className="btn btn-primary gap-2">
+              <Calculator className="w-4 h-4" /> Tính toán
+            </button>
           </div>
+        </form>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cân nặng (kg)
-            </label>
-            <input
-              type="number"
-              name="weight"
-              min="0"
-              step="0.1"
-              value={childData.weight}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-              required
-            />
+        {recommendedCalories && (
+          <div className="alert alert-success shadow-lg mt-6">
+            <div>
+              <h3 className="font-bold text-lg">Khuyến nghị hàng ngày:</h3>
+              <div className="text-xl">
+                Cần khoảng <span className="font-black text-3xl">{recommendedCalories}</span> calories/ngày
+              </div>
+              <div className="text-xs opacity-70 mt-1">
+                * Dựa trên công thức Harris-Benedict. Tham khảo ý kiến bác sĩ để có chỉ định chính xác.
+              </div>
+            </div>
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Chiều cao (cm)
-            </label>
-            <input
-              type="number"
-              name="height"
-              min="0"
-              step="0.1"
-              value={childData.height}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
-        </div>
+        {history.length > 0 && (
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Lịch sử theo dõi</h3>
+              <button className="btn btn-xs btn-outline btn-error gap-1" onClick={() => setHistory([])}>
+                <Trash2 className="w-3 h-3" /> Xóa lịch sử
+              </button>
+            </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Tính toán
-          </button>
-          <button
-            type="button"
-            className="mt-4 px-4 py-2 btn btn-outline"
-            onClick={() => { setChildData({ age: '', weight: '', height: '', gender: 'male' }); setRecommendedCalories(null); }}
-          >
-            Đặt lại
-          </button>
-        </div>
-      </form>
-
-      {recommendedCalories && (
-        <div className="mb-6 p-4 bg-blue-50 rounded">
-          <h4 className="text-md font-semibold mb-2">Khuyến nghị hàng ngày:</h4>
-          <p>Lượng calo cần thiết: <span className="font-bold">{recommendedCalories}</span> calories/ngày</p>
-          <p className="text-sm text-gray-600 mt-2">
-            * Đây là ước tính dựa trên công thức Harris-Benedict. Tham khảo ý kiến bác sĩ để có chỉ định chính xác.
-          </p>
-        </div>
-      )}
-
-      {history.length > 0 && (
-        <div>
-          <h4 className="text-md font-semibold mb-2">Lịch sử theo dõi:</h4>
-          <p className="text-sm text-gray-500 mb-2">Bạn có thể xóa lịch sử nếu muốn.</p>
-          <div className="mb-2">
-            <button className="btn btn-sm btn-outline" onClick={() => setHistory([])}>Xóa lịch sử</button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full table-auto">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="px-4 py-2">Ngày</th>
-                  <th className="px-4 py-2">Tuổi</th>
-                  <th className="px-4 py-2">Cân nặng</th>
-                  <th className="px-4 py-2">Chiều cao</th>
-                  <th className="px-4 py-2">Calo/ngày</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((entry, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-2">
-                      {new Date(entry.date).toLocaleDateString('vi-VN')}
-                    </td>
-                    <td className="px-4 py-2">{entry.age}</td>
-                    <td className="px-4 py-2">{entry.weight} kg</td>
-                    <td className="px-4 py-2">{entry.height} cm</td>
-                    <td className="px-4 py-2">{entry.calories}</td>
+            <div className="overflow-x-auto rounded-lg border border-base-200">
+              <table className="table table-zebra w-full">
+                <thead className="bg-base-200">
+                  <tr>
+                    <th>Ngày</th>
+                    <th>Tuổi</th>
+                    <th>Cân nặng</th>
+                    <th>Chiều cao</th>
+                    <th>Calo/ngày</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {history.map((entry, index) => (
+                    <tr key={index}>
+                      <td>{new Date(entry.date).toLocaleDateString('vi-VN')}</td>
+                      <td>{entry.age}</td>
+                      <td>{entry.weight} kg</td>
+                      <td>{entry.height} cm</td>
+                      <td className="font-bold text-primary">{entry.calories}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

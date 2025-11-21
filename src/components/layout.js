@@ -1,17 +1,15 @@
-
-import {Footer} from "@/components/footer";
-import {Header} from "@/components/haeder";
-
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
 
 const Layout = ({ children }) => {
     return (
-        <>
+        <div className="min-h-screen flex flex-col bg-base-100">
             <Header />
-            <main className="flex min-h-screen flex-col items-center justify-between p-24 border-gray-300 bg-linear-to-b from-gray-100 to-blue-gray-500 pb-6 pt-8 backdrop-blur-lg text-gray-800">
+            <main className="grow container mx-auto px-4 py-8 flex flex-col items-center gap-8">
                 {children}
             </main>
             <Footer />
-        </>
+        </div>
     );
 };
 
