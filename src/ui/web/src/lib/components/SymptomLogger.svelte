@@ -7,7 +7,10 @@
         AlertCircle,
         Droplets,
         Loader2,
+        User,
     } from "lucide-svelte";
+    import { childrenApi, logsApi } from "$lib/api";
+    import { auth } from "$lib/stores/auth";
 
     // --- Types ---
     type Emotion =
@@ -37,6 +40,11 @@
         time: string;
         advice?: string;
         isLoadingAdvice?: boolean;
+    }
+
+    interface Child {
+        id: number;
+        name: string;
     }
 
     interface BristolType {
@@ -89,6 +97,9 @@
     ];
 
     // --- State ---
+    let children = $state<Child[]>([]);
+    let selectedChildId = $state<number | null>(null);
+
     let logs = $state<SymptomLog[]>([]);
     let note = $state("");
     let emotion = $state<Emotion>("neutral");
@@ -100,21 +111,72 @@
     let isFormValid = $derived(note.trim() !== "" || stoolType !== "none");
 
     // --- Lifecycle & Persistence ---
-    onMount(() => {
+    onMount(async () => {
         if (!browser) return;
 
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                logs = JSON.parse(raw);
+        if ($auth.isAuthenticated) {
+            try {
+                const res = (await childrenApi.getAll()) as {
+                    children: Child[];
+                };
+                children = res.children;
+                if (children.length > 0) {
+                    selectedChildId = children[0].id;
+                }
+            } catch (e) {
+                console.error("Failed to load children", e);
             }
-        } catch (e) {
-            console.warn("Failed to load symptom logs", e);
+        }
+
+        if (!$auth.isAuthenticated) {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    logs = JSON.parse(raw);
+                }
+            } catch (e) {
+                console.warn("Failed to load symptom logs", e);
+            }
         }
     });
 
     $effect(() => {
-        if (browser) {
+        if (selectedChildId && $auth.isAuthenticated) {
+            loadLogsForChild(selectedChildId);
+        }
+    });
+
+    const loadLogsForChild = async (childId: number) => {
+        try {
+            const res = (await logsApi.getSymptom(childId)) as { logs: any[] };
+            // Map backend logs to frontend format
+            // Note: Backend stores symptom logs. We might need to adjust backend schema to store stoolType and advice if they are critical
+            // For now, let's assume note contains the details or schema needs update.
+            // Actually, backend schema has symptom_type, severity, note, duration.
+            // Frontend has emotion, stoolType.
+            // We should map these. Ideally update backend schema.
+
+            logs = res.logs.map((l: any) => ({
+                id: l.id.toString(),
+                note: l.note || "",
+                emotion: "neutral", // Backend doesn't store emotion in symptom log table (separate table)
+                severity: (["mild", "moderate", "severe"].includes(
+                    l.severity as string,
+                )
+                    ? l.severity
+                    : "mild") as Severity,
+                stoolType: "none", // Backend doesn't store stoolType explicitly yet
+                time: l.date,
+                advice: "", // Backend doesn't store advice yet
+                isLoadingAdvice: false,
+            }));
+        } catch (e) {
+            console.error("Failed to load logs", e);
+        }
+    };
+
+    $effect(() => {
+        if (browser && !$auth.isAuthenticated) {
             untrack(() => {
                 try {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
@@ -133,22 +195,20 @@
         return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     };
 
+    import { aiApi } from "$lib/api";
+
     const fetchAdvice = async (
         logId: string,
         entry: Omit<SymptomLog, "id" | "time">,
     ): Promise<void> => {
         try {
-            const res = await fetch("/api/gemini_advice", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(entry),
-            });
-
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
-            }
-
-            const data = await res.json();
+            // Use backend API
+            const data = (await aiApi.getAdvice({
+                note: entry.note,
+                emotion: entry.emotion,
+                severity: entry.severity,
+                time: new Date().toISOString(),
+            })) as { success: boolean; advice: string };
 
             if (data?.success && data?.advice) {
                 logs = logs.map((l) =>
@@ -194,20 +254,61 @@
                 isLoadingAdvice: true,
             };
 
-            // Add log immediately with loading state
-            logs = [entry, ...logs].slice(0, MAX_LOGS);
+            if ($auth.isAuthenticated && selectedChildId) {
+                // Save to backend
+                // NOTE: Backend schema is partial compared to frontend needs.
+                // We save what we can.
+                // Ideally we should update backend schema to include stoolType etc.
+                await logsApi.createSymptom({
+                    child_id: selectedChildId,
+                    date: entry.time,
+                    symptom_type:
+                        stoolType !== "none" ? "digestive" : "general",
+                    severity:
+                        severity === "mild"
+                            ? 1
+                            : severity === "moderate"
+                              ? 5
+                              : 10, // Mapping string to number as per backend schema validation?
+                    // Wait, backend schema says severity is number 1-10.
+                    // Let's update frontend logic to map correctly.
+                    note: `${entry.note} [Stool: ${entry.stoolType}] [Emotion: ${entry.emotion}]`,
+                });
+
+                // Also save emotion log if emotion is not neutral
+                if (emotion !== "neutral") {
+                    await logsApi.createEmotion({
+                        child_id: selectedChildId,
+                        date: entry.time,
+                        emotion: emotion,
+                        confidence: 1.0,
+                        note: "From Symptom Logger",
+                    });
+                }
+
+                // Reload logs
+                await loadLogsForChild(selectedChildId);
+
+                // Mock advice for now since backend advice is not implemented or separate
+                // Or we can still call the frontend fetchAdvice but it needs to persist somewhere
+            } else {
+                // Add log immediately with loading state for local
+                logs = [entry, ...logs].slice(0, MAX_LOGS);
+            }
 
             // Reset form
             note = "";
             stoolType = "none";
 
-            // Fetch advice asynchronously (don't await)
-            fetchAdvice(logId, {
-                note: entry.note,
-                emotion: entry.emotion,
-                severity: entry.severity,
-                stoolType: entry.stoolType,
-            });
+            if (!$auth.isAuthenticated) {
+                // Fetch advice asynchronously (don't await)
+                fetchAdvice(logId, {
+                    note: entry.note,
+                    emotion: entry.emotion,
+                    severity: entry.severity,
+                    stoolType: entry.stoolType,
+                });
+            }
         } catch (error) {
             console.error("Failed to add log:", error);
         } finally {
@@ -264,6 +365,25 @@
             <AlertCircle class="w-5 h-5 text-primary" />
             Ghi nhận triệu chứng / Tâm trạng
         </h2>
+
+        {#if $auth.isAuthenticated && children.length > 0}
+            <div class="form-control w-full mb-4">
+                <label class="label" for="childSelectSymptom">
+                    <span class="label-text font-medium flex gap-2 items-center"
+                        ><User class="w-4 h-4" /> Chọn trẻ</span
+                    >
+                </label>
+                <select
+                    id="childSelectSymptom"
+                    bind:value={selectedChildId}
+                    class="select select-bordered w-full"
+                >
+                    {#each children as child}
+                        <option value={child.id}>{child.name}</option>
+                    {/each}
+                </select>
+            </div>
+        {/if}
 
         <form
             onsubmit={(e) => {

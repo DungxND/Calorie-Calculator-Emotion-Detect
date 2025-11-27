@@ -1,68 +1,165 @@
 <script>
-    import { Github } from "lucide-svelte";
+    import {
+        Github,
+        LayoutDashboard,
+        Users,
+        LogOut,
+        User,
+        Menu,
+    } from "lucide-svelte";
+    import { page } from "$app/stores";
+    import { auth } from "$lib/stores/auth";
 
-    const siteTitle = "Trình tính Calo AI | Nhận diện món ăn";
-    const description =
-        "Sử dụng AI để nhận diện hình ảnh món ăn và ước tính calo, hỗ trợ phụ huynh quản lý dinh dưỡng cho trẻ.";
-    const pageImage = "https://aicc.gptdevelopment.online/cor.webp";
-    const keywords =
-        "AI, food recognition, calorie counting, calorie statistics， Calorie Calculator， AI Calorie Calculator， Do Calorie Calculator";
+    const siteTitle = "Calorize";
+    const description = "AI-powered nutrition assistant for children.";
 </script>
 
 <svelte:head>
     <title>{siteTitle}</title>
     <meta name="description" content={description} />
-    <meta property="og:title" content={siteTitle} />
-    <meta name="twitter:title" content={siteTitle} />
-    <meta itemprop="name" content={siteTitle} />
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico" />
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-    <meta name="keywords" content={keywords} />
-    <meta name="application-name" content={siteTitle} />
-    <meta property="og:description" content={description} />
-    <meta property="og:site_name" content={siteTitle} />
-    <meta property="og:url" content="none" />
-    <meta property="og:locale" content="vi_VN" />
-    <meta property="og:image" content={pageImage} />
-    <meta property="og:image:secure_url" content={pageImage} />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content={siteTitle} />
-    <meta name="twitter:site" content="none" />
-    <meta name="twitter:image" content={pageImage} />
-    <meta name="twitter:description" content={description} />
 </svelte:head>
 
-<!-- GoogleAnalytics component can be added here if needed, or in app.html -->
-
-<div class="navbar bg-base-100 shadow-lg">
-    <div class="flex-1">
-        <a
-            href="/"
-            class="btn btn-ghost text-xl h-auto py-2 flex flex-col items-start gap-0"
-        >
-            <div class="flex items-center gap-2">
-                <span>Trình tính Calo AI</span>
+<div
+    class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-50 border-b border-base-200 px-4 lg:px-8"
+>
+    <div class="navbar-start">
+        <div class="dropdown">
+            <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+                <Menu class="h-5 w-5" />
             </div>
-            <span class="text-xs font-normal text-base-content/70 pl-10">
-                Nhận diện món ăn & gợi ý dinh dưỡng
-            </span>
+            <ul
+                tabindex="-1"
+                class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+            >
+                {#if $auth.isAuthenticated}
+                    <li>
+                        <a
+                            href="/dashboard"
+                            class:active={$page.url.pathname.startsWith(
+                                "/dashboard",
+                            )}
+                        >
+                            <LayoutDashboard class="h-4 w-4" /> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a
+                            href="/children"
+                            class:active={$page.url.pathname.startsWith(
+                                "/children",
+                            )}
+                        >
+                            <Users class="h-4 w-4" /> Children Profile
+                        </a>
+                    </li>
+                    <li>
+                        <button onclick={() => auth.logout()} class="text-error"
+                            ><LogOut class="h-4 w-4" /> Logout</button
+                        >
+                    </li>
+                {:else}
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/register">Register</a></li>
+                {/if}
+            </ul>
+        </div>
+        <a href="/" class="btn btn-ghost text-xl font-bold gap-2">
+            <span
+                class="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
+                >Calorize</span
+            >
         </a>
     </div>
-    <div class="flex-none">
-        <ul class="menu menu-horizontal px-1">
-            <li>
-                <a
-                    href="https://github.com/hung38384/Calorie-Calculator"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="btn btn-ghost btn-circle"
-                    aria-label="Github Repository"
-                >
-                    <Github class="h-5 w-5" />
-                </a>
-            </li>
+
+    <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1 gap-2">
+            {#if $auth.isAuthenticated}
+                <li>
+                    <a
+                        href="/dashboard"
+                        class:active={$page.url.pathname.startsWith(
+                            "/dashboard",
+                        )}
+                    >
+                        <LayoutDashboard class="h-4 w-4" /> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a
+                        href="/children"
+                        class:active={$page.url.pathname.startsWith(
+                            "/children",
+                        )}
+                    >
+                        <Users class="h-4 w-4" /> Children Profile
+                    </a>
+                </li>
+            {/if}
         </ul>
+    </div>
+
+    <div class="navbar-end gap-2">
+        <label class="swap swap-rotate btn btn-ghost btn-circle">
+            <!-- this hidden checkbox controls the state -->
+            <input type="checkbox" class="theme-controller" value="dark" />
+
+            <!-- sun icon -->
+            <svg
+                class="swap-on fill-current w-5 h-5"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                ><path
+                    d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"
+                /></svg
+            >
+
+            <!-- moon icon -->
+            <svg
+                class="swap-off fill-current w-5 h-5"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                ><path
+                    d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"
+                /></svg
+            >
+        </label>
+
+        {#if $auth.isAuthenticated}
+            <div class="dropdown dropdown-end">
+                <div
+                    tabindex="0"
+                    role="button"
+                    class="btn btn-ghost btn-circle avatar placeholder"
+                >
+                    <div
+                        class="bg-neutral text-neutral-content rounded-full w-10"
+                    >
+                        <span class="text-xs"
+                            >{$auth.user?.username
+                                ?.substring(0, 2)
+                                .toUpperCase() || "U"}</span
+                        >
+                    </div>
+                </div>
+                <ul
+                    tabindex="-1"
+                    class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+                >
+                    <li class="menu-title">
+                        <span>{$auth.user?.email}</span>
+                    </li>
+                    <li>
+                        <button onclick={() => auth.logout()} class="text-error"
+                            ><LogOut class="h-4 w-4" /> Logout</button
+                        >
+                    </li>
+                </ul>
+            </div>
+        {:else}
+            <div class="hidden lg:flex gap-2">
+                <a href="/login" class="btn btn-ghost">Login</a>
+                <a href="/register" class="btn btn-primary">Get Started</a>
+            </div>
+        {/if}
     </div>
 </div>

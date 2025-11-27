@@ -1,7 +1,15 @@
 <script lang="ts">
     import { onMount, untrack } from "svelte";
     import { browser } from "$app/environment";
-    import { Activity, Calculator, RotateCcw, Trash2 } from "lucide-svelte";
+    import {
+        Activity,
+        Calculator,
+        RotateCcw,
+        Trash2,
+        User,
+    } from "lucide-svelte";
+    import { childrenApi, logsApi } from "$lib/api";
+    import { auth } from "$lib/stores/auth";
 
     // --- Types ---
     type Gender = "male" | "female";
@@ -23,10 +31,20 @@
         calories: number;
     }
 
+    interface Child {
+        id: number;
+        name: string;
+        birth_date: string;
+        gender: Gender;
+    }
+
     // --- Constants ---
     const MAX_HISTORY_ENTRIES = 50;
 
     // --- State ---
+    let children = $state<Child[]>([]);
+    let selectedChildId = $state<number | null>(null);
+
     let childData = $state<ChildData>({
         age: null,
         weight: null,
@@ -51,21 +69,83 @@
     );
 
     // --- Lifecycle & Persistence ---
-    onMount(() => {
+    onMount(async () => {
         if (!browser) return;
 
-        try {
-            const savedHistory = localStorage.getItem("growthHistory");
-            if (savedHistory) {
-                history = JSON.parse(savedHistory);
+        if ($auth.isAuthenticated) {
+            try {
+                const res = (await childrenApi.getAll()) as {
+                    children: Child[];
+                };
+                children = res.children;
+                if (children.length > 0) {
+                    selectedChildId = children[0].id;
+                }
+            } catch (e) {
+                console.error("Failed to load children", e);
             }
-        } catch (e) {
-            console.error("Failed to load history from localStorage", e);
+        }
+
+        // Legacy local storage load if no user
+        if (!$auth.isAuthenticated) {
+            try {
+                const savedHistory = localStorage.getItem("growthHistory");
+                if (savedHistory) {
+                    history = JSON.parse(savedHistory);
+                }
+            } catch (e) {
+                console.error("Failed to load history from localStorage", e);
+            }
         }
     });
 
     $effect(() => {
-        if (browser) {
+        if (selectedChildId && $auth.isAuthenticated) {
+            loadHistoryForChild(selectedChildId);
+        }
+    });
+
+    const loadHistoryForChild = async (childId: number) => {
+        try {
+            const res = await logsApi.getGrowth(childId);
+            // Map backend logs to history format
+            history = res.logs.map((log: any) => {
+                const child = children.find((c) => c.id === childId);
+                const birthDate = new Date(child?.birth_date || Date.now());
+                const logDate = new Date(log.date);
+                // Calculate age at time of log
+                const age =
+                    (logDate.getTime() - birthDate.getTime()) /
+                    (1000 * 60 * 60 * 24 * 365.25);
+
+                // Recalculate calories if not stored (backend doesn't store calories yet, maybe we should add it or calc on fly)
+                // For now, re-calculate BMR to display
+                const bmr = calculateBMR(
+                    log.weight,
+                    log.height,
+                    age,
+                    (child?.gender as Gender) || "male",
+                );
+                // Assuming moderate activity for history display if not stored
+                const calories = Math.round(bmr * 1.5);
+
+                return {
+                    id: log.id.toString(),
+                    date: log.date,
+                    age: Number(age.toFixed(1)),
+                    weight: log.weight,
+                    height: log.height,
+                    gender: child?.gender || "male",
+                    calories: calories,
+                };
+            });
+        } catch (e) {
+            console.error("Failed to load growth logs", e);
+        }
+    };
+
+    $effect(() => {
+        if (browser && !$auth.isAuthenticated) {
             localStorage.setItem("growthHistory", JSON.stringify(history));
         }
     });
@@ -133,7 +213,7 @@
         return energyKJ / 4.184;
     };
 
-    const handleSubmit = (e: Event) => {
+    const handleSubmit = async (e: Event) => {
         e.preventDefault();
         if (!isValid || isSubmitting) return;
 
@@ -168,8 +248,21 @@
                 calories,
             };
 
-            // Prepend new entry and limit history size
-            history = [entry, ...history].slice(0, MAX_HISTORY_ENTRIES);
+            // Save to backend if authenticated
+            if ($auth.isAuthenticated && selectedChildId) {
+                await logsApi.createGrowth({
+                    child_id: selectedChildId,
+                    date: new Date().toISOString(),
+                    weight,
+                    height,
+                    note: `Calorie calculation: ${calories} kcal`,
+                });
+                // Refresh history
+                await loadHistoryForChild(selectedChildId);
+            } else {
+                // Prepend new entry and limit history size for local storage
+                history = [entry, ...history].slice(0, MAX_HISTORY_ENTRIES);
+            }
         } catch (error) {
             console.error("Calculation error:", error);
             errorMessage = "Có lỗi xảy ra khi tính toán. Vui lòng thử lại.";
@@ -197,6 +290,25 @@
         <p class="text-base-content/70 mb-4 text-sm">
             Nhập thông tin của trẻ để ước tính lượng calo khuyến nghị hàng ngày.
         </p>
+
+        {#if $auth.isAuthenticated && children.length > 0}
+            <div class="form-control w-full mb-4">
+                <label class="label" for="childSelect">
+                    <span class="label-text font-medium flex gap-2 items-center"
+                        ><User class="w-4 h-4" /> Chọn trẻ</span
+                    >
+                </label>
+                <select
+                    id="childSelect"
+                    bind:value={selectedChildId}
+                    class="select select-bordered w-full"
+                >
+                    {#each children as child}
+                        <option value={child.id}>{child.name}</option>
+                    {/each}
+                </select>
+            </div>
+        {/if}
 
         <form onsubmit={handleSubmit}>
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">

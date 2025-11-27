@@ -8,41 +8,79 @@
 @plugin "daisyui/theme" {
     name: "light";
     default: true;
+    /* Warm, food-inspired palette */
+    --color-base-100: oklch(99% 0.005 95);
+    /* Very light warm cream */
+    --color-base-200: oklch(96% 0.02 95);
+    /* Light warm beige */
+    --color-base-300: oklch(92% 0.03 95);
+    /* Warm beige */
+    --color-base-content: oklch(25% 0.04 50);
+    /* Dark warm brown */
+
+    --color-primary: oklch(70% 0.18 50);
+    /* Warm orange/terracotta */
+    --color-primary-content: oklch(98% 0.01 50);
+
+    --color-secondary: oklch(85% 0.15 85);
+    /* Golden yellow */
+    --color-secondary-content: oklch(25% 0.05 85);
+
+    --color-accent: oklch(75% 0.16 140);
+    /* Fresh green (vegetables) */
+    --color-accent-content: oklch(98% 0.01 140);
+
+    --color-neutral: oklch(40% 0.05 50);
+    /* Brownish neutral */
+    --color-neutral-content: oklch(98% 0.01 50);
+
+    --radius-box: 1rem;
+    --radius-field: 0.5rem;
+    --radius-selector: 2rem;
 }
 
 @plugin "daisyui/theme" {
     name: "dark";
     prefersdark: true;
+    /* Dark mode - warm dark tones with better contrast */
+    --color-base-100: oklch(18% 0.02 50);
+    /* Dark chocolate/coffee */
+    --color-base-200: oklch(14% 0.02 50);
+    --color-base-300: oklch(10% 0.02 50);
+    --color-base-content: oklch(92% 0.02 90);
+    /* Soft cream text */
+
+    --color-primary: oklch(70% 0.17 50);
+    /* Brighter warm orange for pop */
+    --color-primary-content: oklch(20% 0.05 50);
+
+    --color-secondary: oklch(85% 0.14 85);
+    /* Bright golden yellow */
+    --color-secondary-content: oklch(30% 0.05 85);
+
+    --color-accent: oklch(75% 0.15 135);
+    /* Vibrant, but not jarring green */
+    --color-accent-content: oklch(20% 0.05 135);
+
+    --color-neutral: oklch(30% 0.03 50);
+    --color-neutral-content: oklch(95% 0.02 90);
+
+    --radius-box: 1rem;
+    --radius-field: 0.75rem;
+    --radius-selector: 2rem;
 }
 
-/* Custom utilities can be added here */
 @layer utilities {
     .text-balance {
         text-wrap: balance;
     }
 }
 
-/* 
-  Retaining original custom variables if they are still needed by the app logic,
-  though DaisyUI handles themes better natively.
-*/
-:root {
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 214, 219, 220;
-    --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --foreground-rgb: 255, 255, 255;
-        --background-start-rgb: 0, 0, 0;
-        --background-end-rgb: 0, 0, 0;
-    }
+/* Smooth scrolling for the whole page */
+html {
+    scroll-behavior: smooth;
 }
 
 body {
-    color: rgb(var(--foreground-rgb));
-    background: linear-gradient(to bottom,
-            transparent,
-            rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+    @apply bg-base-100 text-base-content font-sans antialiased selection:bg-primary selection:text-primary-content;
 }
